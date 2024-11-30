@@ -6,11 +6,14 @@ import subprocess
 # fetch all the files under the path ../data/
 path = '../data/'
 files = os.listdir(path)
+SAMPLE_SIZE = 1000
 for file in files:
     if not os.path.isdir(file):
         if file == 'steam_games.json':
             with open(path + file, 'r') as f:
                 lines = f.readlines()
+            if len(lines) > SAMPLE_SIZE:
+                lines = lines[:SAMPLE_SIZE]
             data = ['[']
             for line in lines:
                 # replace all the True to true
@@ -19,6 +22,8 @@ for file in files:
                 line = re.sub(r'False', 'false', line)
                 # replace all the u' to '
                 line = re.sub(r"u'", "'", line)
+                # replace all the u" to "
+                line = re.sub(r'u"', '"', line)
                 data.append(line + ',')
             data[-1] = data[-1][:-1]
             data.append(']')
@@ -27,6 +32,8 @@ for file in files:
         elif file == 'australian_users_items.json':
             with open(path + file, 'r') as f:
                 lines = f.readlines()
+            if len(lines) > SAMPLE_SIZE:
+                lines = lines[:SAMPLE_SIZE]
             proUsers = []
             data = ['[']
             for line in lines:
@@ -52,6 +59,8 @@ for file in files:
         else:
             with open(path + file, 'r') as f:
                 lines = f.readlines()
+            if len(lines) > SAMPLE_SIZE:
+                lines = lines[:SAMPLE_SIZE]
             data = ['[']
             for line in lines:
                 # replace all the True to true
