@@ -1,1 +1,4 @@
-.idea/*
+<<<<<<< HEAD
+=======
+idea/*
+>>>>>>> 8228c8d (add gitignore to get rid of .idea files)
