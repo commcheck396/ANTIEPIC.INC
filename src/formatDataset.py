@@ -13,7 +13,7 @@ sampledGames = set()
 for file in files:
     if not os.path.isdir(file):
         if file == 'steam_games.json':
-            with open(path + file, 'r') as f:
+            with open(path + file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             lines.sort()
             data = ['[']
@@ -41,7 +41,7 @@ for file in files:
             with open(path + file, 'w') as file:
                 file.writelines(data)
         elif file == 'australian_users_items.json':
-            with open(path + file, 'r') as f:
+            with open(path + file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             lines.sort()
             if len(lines) > SAMPLE_SIZE:
@@ -71,13 +71,13 @@ for file in files:
                 data.append(line + ',')
             data[-1] = data[-1][:-1]
             data.append(']')
-            with open(path + file, 'w') as file:
+            with open(path + file, 'w', encoding='utf-8') as file:
                 file.writelines(data)
             # print(proUsers)
             with open(path + 'pro_user.json', 'w') as file:
                 json.dump(proUsers, file)
         else:
-            with open(path + file, 'r') as f:
+            with open(path + file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             lines.sort()
             if len(lines) > SAMPLE_SIZE:
@@ -101,6 +101,6 @@ for file in files:
                 data.append(line + ',')
             data[-1] = data[-1][:-1]
             data.append(']')
-            with open(path + file, 'w') as file:
+            with open(path + file, 'w', encoding='utf-8') as file:
                 file.writelines(data)
 
