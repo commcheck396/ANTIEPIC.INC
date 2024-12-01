@@ -375,7 +375,7 @@ y = []
 print(1)
 startTime = time.time()
 for user_id, user_data in user_data_map.items():
-    for game_id in user_data.get('items', {}):
+    for game_id, game_data in user_data.get('reviews', {}).items():
         features = extract_features(user_id, game_id)
         X.append(features)
 
