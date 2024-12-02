@@ -3,8 +3,7 @@ import json5
 import demjson
 import time
 from datetime import datetime
-
-from debugpy.common.timestamp import current
+import re
 
 startTime = time.time()
 
@@ -40,6 +39,20 @@ def getDate(posted):
         return datetime.strptime(posted_with_year, "Posted %B %d. %Y.")
 
 
+def getFunny(str):
+    match = re.search(r'\d+', str)
+    if match:
+        return int(match.group())
+    return 0
+
+
+def getHelpful(str):
+    match = re.search(r'(\d+)%', str)
+    if match:
+        return int(match.group(1))
+    return 0
+
+
 user_data_map = {}
 
 for user in user_reviews:
@@ -55,7 +68,9 @@ for user in user_reviews:
         date = getDate(review['posted'])
         user_data_map[user_id]['reviews'][game_id] = {
             'posted': date,
-            'recommend': review['recommend']
+            'recommend': review['recommend'],
+            'funny': getFunny(review['funny']),
+            'helpful': getHelpful(review['helpful'])
         }
 # print(user_data_map["76561197970982479"])
 
@@ -355,6 +370,21 @@ def get_user_time_span(user_data_map, user_id, game_id, year):
     return abs((current_date - date).days)
 
 
+def get_helpful_funny_weight(user_data_map, user_id, game_id, funny_k):
+    """
+    获取评论的helpful和funny权重
+    """
+    if user_id not in user_data_map:
+        return None
+    reviews = user_data_map[user_id].get('reviews', {})
+    if game_id not in reviews:
+        return None
+    helpful = reviews.get(game_id)['helpful']
+    funny = reviews.get(game_id)['funny']
+    result = helpful * 0.01 + funny * funny_k
+    return result
+
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -371,7 +401,7 @@ def extract_features(user_id, game_id):
     """
     features = {}
 
-    features["time_span"] = get_user_time_span(user_data_map, user_id, game_id, currentYear)
+    features['helpful_funny'] = get_helpful_funny_weight(user_data_map, user_id, game_id, funnyK)
 
     features["playtime"] = get_user_game_playtime(user_data_map, user_id, game_id)
 
@@ -401,13 +431,13 @@ def extract_features(user_id, game_id):
     return features
 
 
-for i in range(6):
+for i in range(10):
     X = []
     y = []
 
-    print(f"开始构建训练数据 年份{2011+i}")
+    funnyK = i * 0.05
+    print(f"funny超参数为{funnyK}")
     startTime = time.time()
-    currentYear = 2011+i
     for user_id, user_data in user_data_map.items():
         for game_id, game_data in user_data.get('reviews', {}).items():
             features = extract_features(user_id, game_id)
@@ -420,39 +450,32 @@ for i in range(6):
     X = pd.DataFrame(X)
     y = np.array(y)
 
-    X_train, X_test, y_train, y_test= train_test_split(X, y, test_size=0.2,random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # 对测试集进行欠采样，使其正负样本比为 1:1
     undersampler = RandomUnderSampler(sampling_strategy=1.0, random_state=42)  # 1.0 表示 1:1 比例
     X_test_resampled, y_test_resampled = undersampler.fit_resample(X_test, y_test)
-    # print(X_test_resampled.shape)
-    # for j in range(len(X_test_resampled)):
-    #     X_test_resampled.iloc[j].pop('user_id')
-    #     X_test_resampled.iloc[j].pop('game_id')
-    # print(X_test_resampled.shape)
-
 
     # 使用训练集进行 SMOTEENN 重采样
     smote_enn = SMOTEENN(random_state=42)
     X_train_resampled, y_train_resampled = smote_enn.fit_resample(X_train, y_train)
 
-    # 匹配时间权重
-    time_weight = []
+    # 匹helpful funny权重
+    helpful_weight = []
     for j in range(len(X_train_resampled)):
-        time_span = X_train_resampled.iloc[j].pop('time_span')
-        if time_span is None:
-            print(user_id, game_id)
-            time_weight.append(0)
+        helpful_funny = X_train_resampled.iloc[j].pop('helpful_funny')
+        if helpful_funny is None:
+            helpful_weight.append(0)
             continue
-        time_weight.append(np.exp(-time_span / 365))
+        helpful_weight.append(helpful_funny)
 
     # 训练模型
     model = RandomForestClassifier(random_state=42)
-    model.fit(X_train_resampled, y_train_resampled, sample_weight=time_weight)
+    model.fit(X_train_resampled, y_train_resampled, sample_weight=helpful_weight)
 
     # 在平衡后的测试集上进行评估
     for j in range(len(X_test_resampled)):
-        X_test_resampled.iloc[j].pop('time_span')
+        X_test_resampled.iloc[j].pop('helpful_funny')
     y_pred = model.predict(X_test_resampled)
     print("Accuracy:", accuracy_score(y_test_resampled, y_pred))
     print("Precision:", precision_score(y_test_resampled, y_pred))
