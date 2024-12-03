@@ -2,14 +2,13 @@
 
 #### Dataset Origin and Previous Studies
 
-The Steam dataset used in this project was originally collected and made available by Tamber in 2019 [1]. This dataset has been widely used in various research studies focusing on game recommendations, user behavior analysis, and market trends in the gaming industry.
+The Steam dataset we used in this assignment was found in our course website, and it can also be found on Kaggle [1]. This dataset has been widely used in various research studies focusing on game recommendations, user behavior analysis, and market trends in the gaming industry.
 
 Similar datasets have been studied in the past, including:
 
-1. The Steam Video Games Dataset by Nik Davis (2016) [2], which focused primarily on game metadata and user reviews but lacked detailed user behavioral data.
+1. The Steam Video Games Dataset by Nik Davis (2019) [2], which focused primarily on game metadata and user reviews but lacked detailed user behavioral data. Gathered around May 2019, it contains most games on the store released prior to that date. Each row has a unique AppID and is usually a separate release, excepting some re-releases and remasters.
 
-2. The Steam Game and Bundle Data by Austin Walker (2017) [3], which emphasized pricing strategies and bundle effectiveness but had limited user interaction information.
-
+2. The Steam Game Dataset by Tamber (2016) [3], which emphasized user behavior data. The behaviors included are 'purchase' and 'play'. The value indicates the degree to which the behavior was performed
 #### State-of-the-Art Methods
 
 Current state-of-the-art methods for analyzing gaming platforms and user behavior include:
@@ -28,32 +27,37 @@ Current state-of-the-art methods for analyzing gaming platforms and user behavio
 
 #### Comparison with Existing Findings
 
-Our findings align with several previous studies while also presenting some notable differences:
+Our results are consistent with several previous studies, but we also have some new findings:
 
-1. **Playtime-Recommendation Correlation**
-   - Similar to previous research [10], we found a positive correlation between playtime and likelihood of recommendation.
-   - However, our analysis revealed a more nuanced relationship, where extremely high playtime doesn't necessarily indicate a positive recommendation.
+1. **User and Game Similarity Analysis**
+   - We discovered significant correlations between user similarity metrics and game recommendation patterns
+   - Game similarity measures proved to be strong predictors of whether a user would recommend a particular game
+   - The combination of both user and game similarities provided robust prediction capabilities
 
-2. **Genre Influence**
-   - Our findings support existing research [11] showing that genre preferences strongly influence user recommendations.
-   - We observed stronger genre-based clustering effects compared to previous studies.
+2. **Temporal Weight Impact**
+   - Our analysis revealed that the temporal weighting of training data had a notable influence on recommendation predictions
+   - More recent user behaviors showed stronger predictive power compared to historical data
+   - The temporal aspect helped capture evolving user preferences and game quality perceptions
 
-3. **Developer Impact**
-   - While previous studies [12] suggested minimal developer influence on user recommendations, our analysis showed significant developer loyalty effects.
+3. **Community Review Impact**
+   - Other users' attitudes towards reviews served as valuable indicators for predicting game recommendations
+   - The collective community response to reviews demonstrated strong correlation with individual recommendation likelihood
+   - This highlighted the importance of social factors in game evaluation
 
-4. **Rating Patterns**
-   - Our observations about rating distributions align with broader studies of digital distribution platforms [13].
-   - However, we found more pronounced regional variations in rating patterns.
+4. **Historical Recommendation Patterns**
+   - Users' previous recommendation histories proved effective in predicting game approval rates
+   - We found consistent patterns in how past user behavior could indicate future game reception
+   - This suggests stable user preferences and evaluation criteria over time
 
-The methodological approaches we employed, particularly in handling data imbalance and feature selection, build upon established techniques while introducing novel combinations to address the specific challenges of our dataset.
+In conclusion, we use innovative approaches based on existing techniques in dealing with data imbalance and feature selection, and introduce novel feature combinations to solve the problems we study on this dataset.
 
 References:
 
-[1] Tamber. (2019). Steam Games Dataset. Retrieved from https://www.kaggle.com/tamber/steam-video-games
+[1] Ahmad. (2023). Steam Game and Bundle Data. Retrieved from https://www.kaggle.com/datasets/pypiahmad/steam-video-game-and-bundle-data
 
-[2] Davis, N. (2016). Steam Video Games Dataset. Retrieved from https://www.kaggle.com/nikdavis/steam-store-games
+[2] Davis, N. (2019). Steam Video Games Dataset. Retrieved from https://www.kaggle.com/nikdavis/steam-store-games
 
-[3] Walker, A. (2017). Steam Game and Bundle Data. Retrieved from https://data.world/awalker/steam-video-games-and-bundles
+[3] Tamber. (2016). Steam Games Dataset. Retrieved from https://www.kaggle.com/tamber/steam-video-games
 
 [4] Smith, J., & Jones, P. (2020). Matrix Factorization Techniques for Game Recommendation Systems. Journal of Gaming Research, 15(2), 45-67.
 
@@ -66,11 +70,3 @@ References:
 [8] Brown, K., & White, R. (2019). Social Network Analysis in Gaming Communities. Social Networks, 58, 34-49.
 
 [9] Lee, S., et al. (2021). Graph Neural Networks for Game Recommendation. WWW '21: Proceedings of the Web Conference, 1895-1906.
-
-[10] Anderson, M. (2018). Understanding Player Behavior Through Playtime Analysis. Game Studies Journal, 12(4), 89-103.
-
-[11] Taylor, R., & Martin, S. (2020). Genre Preferences in Digital Gaming. Gaming Research Quarterly, 25(3), 156-171.
-
-[12] Wilson, J. (2019). Developer Influence on Game Success: A Statistical Analysis. Journal of Game Development, 8(2), 67-82.
-
-[13] Thompson, E., et al. (2021). Rating Patterns Across Digital Distribution Platforms. Digital Market Analytics, 16(4), 234-251.
