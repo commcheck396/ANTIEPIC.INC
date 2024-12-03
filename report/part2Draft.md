@@ -25,3 +25,32 @@ The objective of this task is to predict whether **User A** will recommend **Gam
 7. **Jaccard Similarity Between User A and Other Users Who Recommended Game B**
    - **Description:** The similarity between User A and other users who have recommended Game B, measured using Jaccard similarity.
    - **Hypothesis:** Users who exhibit similar preferences to those who recommend Game B are more likely to recommend it, as shared interests often lead to similar recommendations.
+
+---
+
+### Task Description
+
+In this task, we aim to predict the positive review rate for a given game using a trained model. However, we encountered several challenges during the process:
+
+- **Information Leakage:** If we directly use the previously trained model to make predictions, there is a risk of information leakage. This occurs when the training data includes information about the game we are trying to predict, leading to inaccurate prediction results.
+- **Sparse Data for Some Games:** For certain games, the number of available samples is very small (e.g., only one review), which makes it difficult to predict their positive review rate with confidence.
+
+### Solution Approach
+
+To address these issues, we implemented the following steps:
+
+1. **Avoiding Information Leakage:**  
+   We first randomly select the games for which we need to predict the positive review rate. To ensure that no data related to these games is included in the training set, we remove any information related to the selected games from the training data. This process helps prevent information leakage, ensuring more accurate predictions.
+
+2. **Handling Games with Few Reviews:**  
+   We discard games with very few reviews (e.g., only one review) from our prediction process. This avoids the problem of unreliable predictions due to insufficient data.
+
+### Process
+
+The process follows these steps:
+
+1. Randomly select the game for which we want to predict the positive review rate.
+2. Identify the users who have reviewed the selected game.
+3. Use the trained model to predict whether these users would leave a positive review for the game.
+4. Calculate the predicted positive review rate based on these user predictions.
+5. Compare the predicted positive review rate with the actual review rate to calculate the Mean Absolute Error (MAE).
