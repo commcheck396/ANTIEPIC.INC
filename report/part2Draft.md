@@ -26,6 +26,15 @@ The objective of this task is to predict whether **User A** will recommend **Gam
    - **Description:** The similarity between User A and other users who have recommended Game B, measured using Jaccard similarity.
    - **Hypothesis:** Users who exhibit similar preferences to those who recommend Game B are more likely to recommend it, as shared interests often lead to similar recommendations.
 
+### Additions to Baseline
+
+1. **Relationship between comment time and comment weight**
+   - **Description:** The impact of comment time on the reference value of comments
+   - **Hypothesis:** The closer the review time is to the prediction time, the more reference value it has, because the evaluation of the game may change in different periods.
+2. **Relationship between comment popularity and comment weight**
+   - **Description:** The impact of the number of likes and votes on the reference value of comments
+   - **Hypothesis:** The more likes or supports a comment receives, the more meaningful the comment is, because it agrees with other players' opinions.
+
 ---
 
 ### Task Description
@@ -34,6 +43,9 @@ In this task, we aim to predict the positive review rate for a given game using 
 
 - **Information Leakage:** If we directly use the previously trained model to make predictions, there is a risk of information leakage. This occurs when the training data includes information about the game we are trying to predict, leading to inaccurate prediction results.
 - **Sparse Data for Some Games:** For certain games, the number of available samples is very small (e.g., only one review), which makes it difficult to predict their positive review rate with confidence.
+- **Weighting Issues:**
+
+  Previously, the data weights in different situations were not distinguished, resulting in all samples being given the same importance. This reduced the authenticity and reliability of the trained model.
 
 ### Solution Approach
 
@@ -45,6 +57,10 @@ To address these issues, we implemented the following steps:
 2. **Handling Games with Few Reviews:**  
    We discard games with very few reviews (e.g., only one review) from our prediction process. This avoids the problem of unreliable predictions due to insufficient data.
 
+3. **Reasonableness of weight:**
+
+   We assign weights to each comment based on the time of the comment and the number of responses. This ensures that comments that are more recent and have more support have more influence in the model.
+
 ### Process
 
 The process follows these steps:
@@ -52,5 +68,6 @@ The process follows these steps:
 1. Randomly select the game for which we want to predict the positive review rate.
 2. Identify the users who have reviewed the selected game.
 3. Use the trained model to predict whether these users would leave a positive review for the game.
-4. Calculate the predicted positive review rate based on these user predictions.
-5. Compare the predicted positive review rate with the actual review rate to calculate the Mean Absolute Error (MAE).
+4. Compare the effects of the two weight increases on the original model.
+5. Calculate the predicted positive review rate based on these user predictions.
+6. Compare the predicted positive review rate with the actual review rate to calculate the Mean Absolute Error (MAE).
