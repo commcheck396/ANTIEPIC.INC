@@ -401,60 +401,121 @@ def extract_features(user_id, game_id):
     return features
 
 
-for i in range(6):
-    X = []
-    y = []
+X = []
+y = []
+i = 4
+print(f"开始构建训练数据 年份{2011 + i}")
+startTime = time.time()
+currentYear = 2011 + i
+for user_id, user_data in user_data_map.items():
+    for game_id, game_data in user_data.get('reviews', {}).items():
+        features = extract_features(user_id, game_id)
+        X.append(features)
 
-    print(f"开始构建训练数据 年份{2011+i}")
-    startTime = time.time()
-    currentYear = 2011+i
-    for user_id, user_data in user_data_map.items():
-        for game_id, game_data in user_data.get('reviews', {}).items():
-            features = extract_features(user_id, game_id)
-            X.append(features)
+        is_recommended = user_data['reviews'].get(game_id, {}).get('recommend', False)
+        y.append(1 if is_recommended else 0)
+endTime = time.time()
+print(f"循环时间: {endTime - startTime}")
+X = pd.DataFrame(X)
+y = np.array(y)
 
-            is_recommended = user_data['reviews'].get(game_id, {}).get('recommend', False)
-            y.append(1 if is_recommended else 0)
-    endTime = time.time()
-    print(f"循环时间: {endTime - startTime}")
-    X = pd.DataFrame(X)
-    y = np.array(y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    X_train, X_test, y_train, y_test= train_test_split(X, y, test_size=0.2,random_state=42)
-
-    # 对测试集进行欠采样，使其正负样本比为 1:1
-    undersampler = RandomUnderSampler(sampling_strategy=1.0, random_state=42)  # 1.0 表示 1:1 比例
-    X_test_resampled, y_test_resampled = undersampler.fit_resample(X_test, y_test)
-    # print(X_test_resampled.shape)
-    # for j in range(len(X_test_resampled)):
-    #     X_test_resampled.iloc[j].pop('user_id')
-    #     X_test_resampled.iloc[j].pop('game_id')
-    # print(X_test_resampled.shape)
+# 对测试集进行欠采样，使其正负样本比为 1:1
+undersampler = RandomUnderSampler(sampling_strategy=1.0, random_state=42)  # 1.0 表示 1:1 比例
+X_test_resampled, y_test_resampled = undersampler.fit_resample(X_test, y_test)
+# print(X_test_resampled.shape)
+# for j in range(len(X_test_resampled)):
+#     X_test_resampled.iloc[j].pop('user_id')
+#     X_test_resampled.iloc[j].pop('game_id')
+# print(X_test_resampled.shape)
 
 
-    # 使用训练集进行 SMOTEENN 重采样
-    smote_enn = SMOTEENN(random_state=42)
-    X_train_resampled, y_train_resampled = smote_enn.fit_resample(X_train, y_train)
+# 使用训练集进行 SMOTEENN 重采样
+smote_enn = SMOTEENN(random_state=42)
+X_train_resampled, y_train_resampled = smote_enn.fit_resample(X_train, y_train)
 
-    # 匹配时间权重
-    time_weight = []
-    for j in range(len(X_train_resampled)):
-        time_span = X_train_resampled.iloc[j].pop('time_span')
-        if time_span is None:
-            print(user_id, game_id)
-            time_weight.append(0)
-            continue
-        time_weight.append(np.exp(-time_span / 365))
+# 匹配时间权重
+time_weight = []
+for j in range(len(X_train_resampled)):
+    time_span = X_train_resampled.iloc[j].get('time_span')
+    if time_span is None:
+        print(user_id, game_id)
+        time_weight.append(0)
+        continue
+    time_weight.append(np.exp(-time_span / 365))
+X_train_resampled = X_train_resampled.drop(columns=['time_span'])
 
-    # 训练模型
-    model = RandomForestClassifier(random_state=42)
-    model.fit(X_train_resampled, y_train_resampled, sample_weight=time_weight)
+# 训练模型
+model = RandomForestClassifier(random_state=42)
+# model.fit(X_train_resampled, y_train_resampled, sample_weight=time_weight)
+model.fit(X_train_resampled, y_train_resampled)
 
-    # 在平衡后的测试集上进行评估
-    for j in range(len(X_test_resampled)):
-        X_test_resampled.iloc[j].pop('time_span')
-    y_pred = model.predict(X_test_resampled)
-    print("Accuracy:", accuracy_score(y_test_resampled, y_pred))
-    print("Precision:", precision_score(y_test_resampled, y_pred))
-    print("Recall:", recall_score(y_test_resampled, y_pred))
-    print("F1 Score:", f1_score(y_test_resampled, y_pred))
+# 在平衡后的测试集上进行评估
+# for j in range(len(X_test_resampled)):
+#     X_test_resampled.iloc[j].pop('time_span')
+X_test_resampled = X_test_resampled.drop(columns=['time_span'])
+y_pred = model.predict(X_test_resampled)
+print("Accuracy:", accuracy_score(y_test_resampled, y_pred))
+print("Precision:", precision_score(y_test_resampled, y_pred))
+print("Recall:", recall_score(y_test_resampled, y_pred))
+print("F1 Score:", f1_score(y_test_resampled, y_pred))
+
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import random
+
+game_ids = [game_id for game_id in game_details.keys()]
+# print(all_games[:5])
+print(len(game_ids))
+selected_game_ids = random.sample(game_ids, 6000)
+
+
+def get_users_who_played_game(user_data_map, game_id):
+    return [user_id for user_id, user_data in user_data_map.items() if game_id in user_data["items"]]
+
+
+def predict_user_recommendation(model, user_id, game_id, user_data_map):
+    features = extract_features(user_id, game_id)
+    features.pop('time_span')
+    X = pd.DataFrame([features])
+    return model.predict(X)[0]
+
+
+results = []
+for game_id in selected_game_ids:
+
+    user_ids = get_users_who_played_game(user_data_map, game_id)
+    if not user_ids:
+        continue
+    actual_recommend_rate = get_game_recommend_rate(user_data_map, game_id)
+    # get rid of the game with actual recommend rate of 0 and 1
+    if actual_recommend_rate == 0 or actual_recommend_rate == 1:
+        continue
+    print(f"Processing Game ID: {game_id}")
+
+    predicted_recommendations = []
+    for user_id in user_ids:
+        prediction = predict_user_recommendation(model, user_id, game_id, user_data_map)
+        predicted_recommendations.append(prediction)
+
+    predicted_recommend_rate = sum(predicted_recommendations) / len(predicted_recommendations)
+
+    results.append({
+        "game_id": game_id,
+        "actual_recommend_rate": actual_recommend_rate,
+        "predicted_recommend_rate": predicted_recommend_rate,
+    })
+
+    print(f"Actual Recommend Rate: {actual_recommend_rate:.4f}")
+    print(f"Predicted Recommend Rate: {predicted_recommend_rate:.4f}")
+
+if results:
+    actual_rates = [result["actual_recommend_rate"] for result in results]
+    predicted_rates = [result["predicted_recommend_rate"] for result in results]
+
+    mse = mean_squared_error(actual_rates, predicted_rates)
+    mae = mean_absolute_error(actual_rates, predicted_rates)
+
+    print("\nEvaluation Metrics:")
+    print(f"Mean Squared Error (MSE): {mse:.4f}")
+    print(f"Mean Absolute Error (MAE): {mae:.4f}")

@@ -471,29 +471,93 @@ X_train_resampled, y_train_resampled = smote_enn.fit_resample(X_train, y_train)
 # 匹配时间权重
 weight = []
 for j in range(len(X_train_resampled)):
-    time_span = X_train_resampled.iloc[j].pop('time_span')
+    time_span = X_train_resampled.iloc[j].get('time_span')
     if time_span is None:
         print(user_id, game_id)
         w1 = 0
     else:
         w1 = np.exp(-time_span / 365)
-    helpful_funny = X_train_resampled.iloc[j].pop('helpful_funny')
+    helpful_funny = X_train_resampled.iloc[j].get('helpful_funny')
     if helpful_funny is None:
         w2 = 0
     else:
         w2 = helpful_funny
     weight.append(w1*w2)
+X_train_resampled = X_train_resampled.drop(columns=['time_span'])
+X_train_resampled = X_train_resampled.drop(columns=['helpful_funny'])
 
 # 训练模型
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train_resampled, y_train_resampled, sample_weight=weight)
 
 # 在平衡后的测试集上进行评估
-for j in range(len(X_test_resampled)):
-    X_test_resampled.iloc[j].pop('time_span')
-    X_test_resampled.iloc[j].pop('helpful_funny')
+# for j in range(len(X_test_resampled)):
+#     X_test_resampled.iloc[j].pop('time_span')
+#     X_test_resampled.iloc[j].pop('helpful_funny')
+X_test_resampled = X_test_resampled.drop(columns=['time_span'])
+X_test_resampled = X_test_resampled.drop(columns=['helpful_funny'])
 y_pred = model.predict(X_test_resampled)
 print("Accuracy:", accuracy_score(y_test_resampled, y_pred))
 print("Precision:", precision_score(y_test_resampled, y_pred))
 print("Recall:", recall_score(y_test_resampled, y_pred))
 print("F1 Score:", f1_score(y_test_resampled, y_pred))
+
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import random
+
+game_ids = [game_id for game_id in game_details.keys()]
+# print(all_games[:5])
+print(len(game_ids))
+selected_game_ids = random.sample(game_ids, 6000)
+
+
+def get_users_who_played_game(user_data_map, game_id):
+    return [user_id for user_id, user_data in user_data_map.items() if game_id in user_data["items"]]
+
+
+def predict_user_recommendation(model, user_id, game_id, user_data_map):
+    features = extract_features(user_id, game_id)
+    features.pop('time_span')
+    features.pop('helpful_funny')
+    X = pd.DataFrame([features])
+    return model.predict(X)[0]
+
+
+results = []
+for game_id in selected_game_ids:
+
+    user_ids = get_users_who_played_game(user_data_map, game_id)
+    if not user_ids:
+        continue
+    actual_recommend_rate = get_game_recommend_rate(user_data_map, game_id)
+    # get rid of the game with actual recommend rate of 0 and 1
+    if actual_recommend_rate == 0 or actual_recommend_rate == 1:
+        continue
+    print(f"Processing Game ID: {game_id}")
+
+    predicted_recommendations = []
+    for user_id in user_ids:
+        prediction = predict_user_recommendation(model, user_id, game_id, user_data_map)
+        predicted_recommendations.append(prediction)
+
+    predicted_recommend_rate = sum(predicted_recommendations) / len(predicted_recommendations)
+
+    results.append({
+        "game_id": game_id,
+        "actual_recommend_rate": actual_recommend_rate,
+        "predicted_recommend_rate": predicted_recommend_rate,
+    })
+
+    print(f"Actual Recommend Rate: {actual_recommend_rate:.4f}")
+    print(f"Predicted Recommend Rate: {predicted_recommend_rate:.4f}")
+
+if results:
+    actual_rates = [result["actual_recommend_rate"] for result in results]
+    predicted_rates = [result["predicted_recommend_rate"] for result in results]
+
+    mse = mean_squared_error(actual_rates, predicted_rates)
+    mae = mean_absolute_error(actual_rates, predicted_rates)
+
+    print("\nEvaluation Metrics:")
+    print(f"Mean Squared Error (MSE): {mse:.4f}")
+    print(f"Mean Absolute Error (MAE): {mae:.4f}")
